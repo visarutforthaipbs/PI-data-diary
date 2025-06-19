@@ -5,7 +5,6 @@ import {
   Text,
   Heading,
   Button,
-  Flex,
   HStack,
   VStack,
   Wrap,
@@ -41,7 +40,6 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
     <Box
       height="100%"
       bg="white"
-      _dark={{ bg: "gray.800" }}
       shadow="md"
       _hover={{
         transform: "translateY(-4px)",
@@ -52,19 +50,12 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
       borderRadius="xl"
       border="1px"
       borderColor="gray.200"
-      _dark={{ borderColor: "gray.700" }}
       cursor="pointer"
       p={6}
     >
       <VStack align="stretch" height="100%" spacing={4}>
         <Box>
-          <Heading
-            size="md"
-            color="gray.800"
-            _dark={{ color: "white" }}
-            mb={3}
-            fontWeight="700"
-          >
+          <Heading size="md" color="gray.800" mb={3} fontWeight="700">
             {dataset.title}
           </Heading>
           <Box
@@ -82,34 +73,21 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
         </Box>
 
         <Box>
-          <Text
-            fontSize="sm"
-            fontWeight="600"
-            color="brand.600"
-            _dark={{ color: "brand.400" }}
-            mb={1}
-          >
+          <Text fontSize="sm" fontWeight="600" color="brand.600" mb={1}>
             🗂️ โปรเจกต์
           </Text>
-          <Text fontSize="sm" color="gray.600" _dark={{ color: "gray.400" }}>
+          <Text fontSize="sm" color="gray.600">
             {dataset.project}
           </Text>
         </Box>
 
         <Box>
-          <Text
-            fontSize="sm"
-            fontWeight="600"
-            color="gray.700"
-            _dark={{ color: "gray.300" }}
-            mb={1}
-          >
+          <Text fontSize="sm" fontWeight="600" color="gray.700" mb={1}>
             📝 คำอธิบาย
           </Text>
           <Text
             fontSize="sm"
             color="gray.600"
-            _dark={{ color: "gray.400" }}
             overflow="hidden"
             textOverflow="ellipsis"
             display="-webkit-box"
@@ -123,16 +101,10 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
         </Box>
 
         <Box>
-          <Text
-            fontSize="sm"
-            fontWeight="600"
-            color="gray.700"
-            _dark={{ color: "gray.300" }}
-            mb={1}
-          >
+          <Text fontSize="sm" fontWeight="600" color="gray.700" mb={1}>
             🏢 หน่วยงาน
           </Text>
-          <Text fontSize="sm" color="gray.600" _dark={{ color: "gray.400" }}>
+          <Text fontSize="sm" color="gray.600">
             {dataset.sourceName}
           </Text>
         </Box>
@@ -146,9 +118,7 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
                   py={1}
                   borderRadius="full"
                   bg="brand.100"
-                  _dark={{ bg: "brand.800" }}
                   color="brand.700"
-                  _dark={{ color: "brand.200" }}
                   fontSize="xs"
                   fontWeight="500"
                 >
@@ -163,9 +133,7 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
                   py={1}
                   borderRadius="full"
                   bg="gray.100"
-                  _dark={{ bg: "gray.700" }}
                   color="gray.600"
-                  _dark={{ color: "gray.400" }}
                   fontSize="xs"
                   fontWeight="500"
                 >
@@ -177,12 +145,7 @@ export function DatasetCard({ dataset }: DatasetCardProps) {
         </Box>
 
         <Box mt="auto">
-          <HStack
-            fontSize="xs"
-            color="gray.500"
-            _dark={{ color: "gray.500" }}
-            mb={3}
-          >
+          <HStack fontSize="xs" color="gray.500" mb={3}>
             <Calendar size={12} />
             <Text>อัปเดต: {formatDate(dataset.dateUpdated)}</Text>
           </HStack>
