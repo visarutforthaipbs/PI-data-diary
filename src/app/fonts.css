@@ -1,0 +1,30 @@
+@font-face {
+  font-family: "DB HelveThaiCA X";
+  src: url("/fonts/dbhelvethaicax-webfont.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DB HelveThaiCA X";
+  src: url("/fonts/dbhelvethaicaxmed-webfont.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DB HelveThaiCA X";
+  src: url("/fonts/dbhelvethaicaxbd-webfont.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Apply font to all elements */
+* {
+  font-family: "DB HelveThaiCA X", "Sarabun", "Noto Sans Thai", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
+    "Open Sans", "Helvetica Neue", sans-serif;
+}

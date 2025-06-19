@@ -1,103 +1,246 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import {
+  Box,
+  Container,
+  VStack,
+  SimpleGrid,
+  Text,
+  Flex,
+  Spinner,
+  Alert,
+  AlertIcon,
+} from "@chakra-ui/react";
+import Fuse from "fuse.js";
+
+import { Navbar } from "@/components/Navbar";
+import { SearchBar } from "@/components/SearchBar";
+import { FilterChips } from "@/components/FilterChips";
+import { DatasetCard } from "@/components/DatasetCard";
+import Footer from "@/components/Footer";
+import { Dataset } from "@/types/dataset";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dataSource, setDataSource] = useState<"notion" | "mock">("mock");
+  const [error, setError] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+  // Fetch datasets from API
+  useEffect(() => {
+    const fetchDatasets = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/datasets");
+        const data = await response.json();
+
+        if (response.ok) {
+          setDatasets(data.datasets);
+          setDataSource(data.source);
+        } else {
+          throw new Error("Failed to fetch datasets");
+        }
+      } catch (err) {
+        setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
+        console.error("Error fetching datasets:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDatasets();
+  }, []);
+
+  // Configure Fuse.js for fuzzy search with Thai support
+  const fuse = useMemo(() => {
+    return new Fuse(datasets, {
+      keys: ["title", "project", "description", "sourceName", "tags"],
+      threshold: 0.4,
+      includeScore: true,
+    });
+  }, [datasets]);
+
+  // Filter datasets based on search and filters
+  const filteredDatasets = useMemo(() => {
+    let filteredData = datasets;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchResults = fuse.search(searchTerm);
+      filteredData = searchResults.map((result) => result.item);
+    }
+
+    // Apply file type filter
+    if (selectedFileTypes.length > 0) {
+      filteredData = filteredData.filter((dataset) =>
+        selectedFileTypes.includes(dataset.fileType)
+      );
+    }
+
+    // Apply tags filter
+    if (selectedTags.length > 0) {
+      filteredData = filteredData.filter((dataset) =>
+        selectedTags.some((tag) => dataset.tags.includes(tag))
+      );
+    }
+
+    return filteredData;
+  }, [datasets, searchTerm, selectedFileTypes, selectedTags, fuse]);
+
+  const handleFileTypeToggle = (fileType: string) => {
+    setSelectedFileTypes((prev) =>
+      prev.includes(fileType)
+        ? prev.filter((type) => type !== fileType)
+        : [...prev, fileType]
+    );
+  };
+
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleClearAll = () => {
+    setSelectedFileTypes([]);
+    setSelectedTags([]);
+    setSearchTerm("");
+  };
+
+  if (loading) {
+    return (
+      <Box minH="100vh" bg="gray.50">
+        <Navbar />
+        <Container maxW="1200px" py={8}>
+          <Flex justify="center" align="center" minH="50vh">
+            <VStack spacing={4}>
+              <Spinner size="xl" color="brand.500" />
+              <Text color="gray.600" fontWeight="500">
+                กำลังโหลดข้อมูล...
+              </Text>
+            </VStack>
+          </Flex>
+        </Container>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box minH="100vh" bg="gray.50">
+        <Navbar />
+        <Container maxW="1200px" py={8}>
+          <Alert status="error" borderRadius="md">
+            <AlertIcon />
+            {error}
+          </Alert>
+        </Container>
+      </Box>
+    );
+  }
+
+  return (
+    <Box minH="100vh" bg="gray.50">
+      <Navbar />
+
+      <Container maxW="1200px" py={8}>
+        <VStack spacing={8} align="stretch">
+          {/* Header Section */}
+          <Box textAlign="center">
+            <Text fontSize="2xl" fontWeight="700" color="gray.800" mb={3}>
+              ค้นหาและเรียกดูชุดข้อมูลของทีม PI
+            </Text>
+            <Text fontSize="lg" color="gray.600" mb={3} fontWeight="500">
+              แหล่งรวมชุดข้อมูลสำหรับการทำงานวิจัยและโปรเจกต์ต่างๆ
+            </Text>
+            {dataSource === "notion" ? (
+              <Box
+                display="inline-block"
+                px={4}
+                py={2}
+                borderRadius="full"
+                bg="green.100"
+                border="1px"
+                borderColor="green.200"
+              >
+                <Text fontSize="sm" color="green.700" fontWeight="600">
+                  🔗 เชื่อมต่อกับฐานข้อมูลสำเร็จ
+                </Text>
+              </Box>
+            ) : (
+              <Box
+                display="inline-block"
+                px={4}
+                py={2}
+                borderRadius="full"
+                bg="secondary.100"
+                border="1px"
+                borderColor="secondary.200"
+              >
+                <Text fontSize="sm" color="secondary.700" fontWeight="600">
+                  📝 ใช้ข้อมูลตัวอย่าง (ยังไม่ได้เชื่อมต่อ Notion)
+                </Text>
+              </Box>
+            )}
+          </Box>
+
+          {/* Search Section */}
+          <Flex justify="center">
+            <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          </Flex>
+
+          {/* Filter Section */}
+          <FilterChips
+            selectedFileTypes={selectedFileTypes}
+            selectedTags={selectedTags}
+            onFileTypeToggle={handleFileTypeToggle}
+            onTagToggle={handleTagToggle}
+            onClearAll={handleClearAll}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+          {/* Results Info */}
+          <Box>
+            <Text color="gray.600" fontSize="sm" fontWeight="500">
+              พบชุดข้อมูล {filteredDatasets.length} รายการ
+              {(selectedFileTypes.length > 0 ||
+                selectedTags.length > 0 ||
+                searchTerm) &&
+                ` จากทั้งหมด ${datasets.length} รายการ`}
+            </Text>
+          </Box>
+
+          {/* Dataset Grid */}
+          {filteredDatasets.length > 0 ? (
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+              {filteredDatasets.map((dataset) => (
+                <DatasetCard key={dataset.id} dataset={dataset} />
+              ))}
+            </SimpleGrid>
+          ) : (
+            <Box
+              textAlign="center"
+              py={16}
+              bg="white"
+              borderRadius="xl"
+              border="1px"
+              borderColor="gray.200"
+            >
+              <Text fontSize="lg" color="gray.500" mb={2} fontWeight="600">
+                😔 ไม่พบชุดข้อมูลที่ตรงกับการค้นหา
+              </Text>
+              <Text fontSize="sm" color="gray.400" fontWeight="500">
+                ลองเปลี่ยนคำค้นหาหรือลบตัวกรองบางส่วน
+              </Text>
+            </Box>
+          )}
+        </VStack>
+      </Container>
+
+      <Footer />
+    </Box>
   );
 }
