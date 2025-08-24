@@ -1,9 +1,11 @@
 "use client";
 
-import { Box, Button, Wrap, WrapItem } from "@chakra-ui/react";
-import { availableFileTypes, availableTags } from "@/data/mockData";
+import { Box, Button, Wrap, WrapItem, Text } from "@chakra-ui/react";
+import { Dataset } from "@/types/dataset";
+import { useMemo, useState } from "react";
 
 interface FilterChipsProps {
+  datasets: Dataset[];
   selectedFileTypes: string[];
   selectedTags: string[];
   onFileTypeToggle: (fileType: string) => void;
@@ -12,6 +14,7 @@ interface FilterChipsProps {
 }
 
 export function FilterChips({
+  datasets,
   selectedFileTypes,
   selectedTags,
   onFileTypeToggle,
@@ -19,6 +22,53 @@ export function FilterChips({
   onClearAll,
 }: FilterChipsProps) {
   const hasFilters = selectedFileTypes.length > 0 || selectedTags.length > 0;
+  const [showAllTags, setShowAllTags] = useState(false);
+  const [showAllFileTypes, setShowAllFileTypes] = useState(false);
+
+  // Extract unique file types from actual datasets with safety checks
+  const availableFileTypes = useMemo(() => {
+    const fileTypes = new Set<string>();
+    datasets.forEach((dataset) => {
+      if (
+        dataset?.fileType &&
+        typeof dataset.fileType === "string" &&
+        dataset.fileType.trim()
+      ) {
+        // Normalize file type names
+        const normalizedFileType = dataset.fileType.trim();
+        fileTypes.add(normalizedFileType);
+      }
+    });
+    return Array.from(fileTypes).sort((a, b) => a.localeCompare(b, "th"));
+  }, [datasets]);
+
+  // Extract unique tags from actual datasets with safety checks
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>();
+    datasets.forEach((dataset) => {
+      if (dataset?.tags && Array.isArray(dataset.tags)) {
+        dataset.tags.forEach((tag) => {
+          if (tag && typeof tag === "string" && tag.trim()) {
+            // Normalize tag names
+            const normalizedTag = tag.trim();
+            tags.add(normalizedTag);
+          }
+        });
+      }
+    });
+    return Array.from(tags).sort((a, b) => a.localeCompare(b, "th"));
+  }, [datasets]);
+
+  // Show message when no data is available
+  if (!datasets || datasets.length === 0) {
+    return (
+      <Box>
+        <Text fontSize="sm" color="gray.500" textAlign="center" py={4}>
+          ไม่มีข้อมูลสำหรับการกรอง
+        </Text>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -27,7 +77,10 @@ export function FilterChips({
           ประเภทไฟล์:
         </Box>
         <Wrap spacing={2}>
-          {availableFileTypes.map((fileType) => (
+          {(showAllFileTypes
+            ? availableFileTypes
+            : availableFileTypes.slice(0, 8)
+          ).map((fileType) => (
             <WrapItem key={fileType}>
               <Button
                 size="sm"
@@ -44,6 +97,22 @@ export function FilterChips({
               </Button>
             </WrapItem>
           ))}
+          {availableFileTypes.length > 8 && (
+            <WrapItem>
+              <Button
+                size="sm"
+                variant="ghost"
+                colorScheme="gray"
+                onClick={() => setShowAllFileTypes(!showAllFileTypes)}
+                borderRadius="full"
+                fontSize="xs"
+              >
+                {showAllFileTypes
+                  ? `ซ่อน`
+                  : `+${availableFileTypes.length - 8} อื่นๆ`}
+              </Button>
+            </WrapItem>
+          )}
         </Wrap>
       </Box>
 
@@ -52,19 +121,35 @@ export function FilterChips({
           แท็ก:
         </Box>
         <Wrap spacing={2}>
-          {availableTags.slice(0, 12).map((tag) => (
-            <WrapItem key={tag}>
+          {(showAllTags ? availableTags : availableTags.slice(0, 12)).map(
+            (tag) => (
+              <WrapItem key={tag}>
+                <Button
+                  size="sm"
+                  variant={selectedTags.includes(tag) ? "solid" : "outline"}
+                  colorScheme={selectedTags.includes(tag) ? "purple" : "gray"}
+                  onClick={() => onTagToggle(tag)}
+                  borderRadius="full"
+                >
+                  {tag}
+                </Button>
+              </WrapItem>
+            )
+          )}
+          {availableTags.length > 12 && (
+            <WrapItem>
               <Button
                 size="sm"
-                variant={selectedTags.includes(tag) ? "solid" : "outline"}
-                colorScheme={selectedTags.includes(tag) ? "purple" : "gray"}
-                onClick={() => onTagToggle(tag)}
+                variant="ghost"
+                colorScheme="gray"
+                onClick={() => setShowAllTags(!showAllTags)}
                 borderRadius="full"
+                fontSize="xs"
               >
-                {tag}
+                {showAllTags ? `ซ่อน` : `+${availableTags.length - 12} อื่นๆ`}
               </Button>
             </WrapItem>
-          ))}
+          )}
         </Wrap>
       </Box>
 
